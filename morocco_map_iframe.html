@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Map of Morocco</title>
+    <!-- Leaflet CSS CDN Link (keep this) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Embedded CSS will go here -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #map-container {
+            height: 500px;
+            width: 100%; /* Modified for iframe adaptability */
+            margin-bottom: 20px;
+        }
+
+        #info-container {
+            width: 100%; /* Modified for iframe adaptability */
+            padding: 15px;
+            border: 1px solid #ccc;
+            min-height: 100px;
+            color: #777;
+            box-sizing: border-box; /* Added for better width calculation */
+        }
+
+        .city-info h2 {
+            margin-top: 0;
+        }
+
+        .city-info ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container"></div>
+    <div id="info-container"></div>
+
+    <!-- Leaflet JavaScript CDN Link (keep this) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Embedded JavaScript will go here -->
+    <script>
+        // Array to store city data
+        const citiesData = [
+          {
+            name: "Casablanca",
+            coordinates: [33.5731, -7.5898],
+            overview: "Casablanca is Morocco's largest city and economic hub. It's a bustling metropolis where modern infrastructure meets charming historic districts, showcasing both Arab-Muslim heritage and colonial-era architecture.",
+            facts: [
+              "Home to the Hassan II Mosque, one of the largest mosques in the world, built partly on the sea.",
+              "Features a vibrant art-deco architectural style in its city center.",
+              "The Old Medina offers a traditional shopping experience with a variety of crafts and goods."
+            ]
+          },
+          {
+            name: "Rabat",
+            coordinates: [34.020882, -6.84165],
+            overview: "Rabat, the capital of Morocco, is known for its historical sites, lush gardens, and a more laid-back atmosphere compared to Casablanca. It blends historical landmarks with modern administrative functions.",
+            facts: [
+              "Features the Kasbah of the Udayas, a picturesque 12th-century fortress.",
+              "Home to the Mausoleum of Mohammed V, a masterpiece of modern Alaouite dynasty architecture.",
+              "The Chellah, a medieval fortified Muslim necropolis, stands on the site of an ancient Roman town."
+            ]
+          },
+          {
+            name: "Chefchaouen",
+            coordinates: [35.1713, -5.2697],
+            overview: "Chefchaouen, the 'Blue Pearl' of Morocco, is famous for its stunning blue-washed buildings in its old medina. Nestled in the Rif Mountains, it offers a unique and picturesque atmosphere.",
+            facts: [
+              "Known for its buildings and alleyways painted in various shades of blue.",
+              "A popular destination for its handicrafts, especially woven goods and goat cheese.",
+              "Offers beautiful hiking opportunities in the surrounding Rif Mountains."
+            ]
+          },
+          {
+            name: "Fes",
+            coordinates: [34.0181, -5.0078],
+            overview: "Fes is Morocco's cultural and spiritual heart, home to the world's oldest university and an incredibly preserved medieval medina, Fes el-Bali, which is a UNESCO World Heritage site.",
+            facts: [
+              "Fes el-Bali is one of the world's largest car-free urban areas.",
+              "Famous for its traditional tanneries, where leather has been processed for centuries.",
+              "Home to the University of Al Quaraouiyine, founded in 859 AD, considered the oldest existing, continually operating educational institution in the world."
+            ]
+          },
+          {
+            name: "Meknes",
+            coordinates: [33.8935, -5.5473],
+            overview: "Meknes is one of Morocco's four imperial cities, known for its grand gates, ramparts, and historical sites from the time of Sultan Moulay Ismail. It offers a glimpse into Morocco's rich history.",
+            facts: [
+              "Features the impressive Bab Mansour gate, known for its intricate tilework.",
+              "Was the capital of Morocco under Sultan Moulay Ismail in the 17th century.",
+              "Nearby are the Roman ruins of Volubilis, a UNESCO World Heritage site."
+            ]
+          },
+          {
+            name: "Volubilis",
+            coordinates: [34.0747, -5.5549],
+            overview: "Volubilis is a partly excavated Berber and Roman city in Morocco situated near Meknes. It's a UNESCO World Heritage site, showcasing impressive mosaics and ancient ruins.",
+            facts: [
+              "A major Roman outpost, its ruins include a triumphal arch, basilica, and well-preserved mosaics.",
+              "Was the ancient capital of the kingdom of Mauretania.",
+              "Provides a fascinating insight into the Roman presence in North Africa."
+            ]
+          },
+          {
+            name: "Erfoud",
+            coordinates: [31.4325, -4.2336],
+            overview: "Erfoud is a town in eastern Morocco, known as the 'Gateway to the Sahara.' It's a popular base for excursions into the Erg Chebbi dunes and is famous for its fossil discoveries.",
+            facts: [
+              "Known for its date festival, typically held in October.",
+              "A major center for fossil excavation and preparation; many unique specimens are found here.",
+              "Offers easy access to the spectacular Erg Chebbi sand dunes near Merzouga."
+            ]
+          },
+          {
+            name: "Merzouga",
+            coordinates: [31.0950, -4.0110],
+            overview: "Merzouga is a small village in southeastern Morocco, right on the edge of the magnificent Erg Chebbi sand dunes. It's a prime destination for camel treks and experiencing Sahara desert life.",
+            facts: [
+              "Famous for the Erg Chebbi dunes, which can reach over 150 meters in height.",
+              "Offers unforgettable experiences like camel trekking and overnight stays in desert camps.",
+              "A great place for stargazing due to clear desert skies and minimal light pollution."
+            ]
+          },
+          {
+            name: "Ouarzazate",
+            coordinates: [30.9189, -6.8934],
+            overview: "Ouarzazate, often called the 'Door of the Desert,' is a city south of Morocco's High Atlas mountains. It's known for its kasbahs and as a major film-making location.",
+            facts: [
+              "Home to Ait Benhaddou, a UNESCO World Heritage ksar (fortified village) and famous film location.",
+              "Features Atlas Film Studios, one of the largest movie studios in the world.",
+              "Serves as a gateway to the Draa Valley and various desert landscapes."
+            ]
+          },
+          {
+            name: "Marrakech",
+            coordinates: [31.6295, -7.9811],
+            overview: "Marrakech, the 'Red City,' is a vibrant and bustling imperial city. It's famous for its souks, palaces, gardens, and the lively Djemaa el-Fna square.",
+            facts: [
+              "Djemaa el-Fna square comes alive at night with storytellers, musicians, and food stalls.",
+              "Known for its extensive souks (markets) offering everything from spices to lanterns.",
+              "Features beautiful historical sites like the Koutoubia Mosque, Bahia Palace, and Saadian Tombs."
+            ]
+          },
+          {
+            name: "Essaouira",
+            coordinates: [31.5085, -9.7595],
+            overview: "Essaouira is a charming coastal city known for its well-preserved 18th-century medina (a UNESCO World Heritage site), strong winds making it popular for kitesurfing, and fresh seafood.",
+            facts: [
+              "Its medina is fortified with impressive ramparts and cannons overlooking the Atlantic.",
+              "A major destination for windsurfing and kitesurfing due to consistent strong winds.",
+              "Famous for its fresh seafood, particularly grilled sardines, and argan oil products."
+            ]
+          }
+        ];
+
+        const map = L.map('map-container').setView([31.7917, -7.0926], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        const infoContainer = document.getElementById('info-container');
+
+        if (infoContainer) {
+            infoContainer.innerHTML = '<p>Click on a city marker to see information here.</p>';
+        }
+
+        citiesData.forEach(city => {
+            const marker = L.marker(city.coordinates).addTo(map);
+            marker.on('click', () => {
+                if (infoContainer) {
+                    infoContainer.innerHTML = '';
+                    infoContainer.classList.add('city-info');
+                    
+                    const nameElement = document.createElement('h2');
+                    nameElement.textContent = city.name;
+
+                    const overviewElement = document.createElement('p');
+                    overviewElement.textContent = city.overview;
+
+                    const factsTitleElement = document.createElement('h3');
+                    factsTitleElement.textContent = 'Travel Facts:';
+
+                    const factsListElement = document.createElement('ul');
+                    city.facts.forEach(fact => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = fact;
+                        factsListElement.appendChild(listItem);
+                    });
+
+                    infoContainer.appendChild(nameElement);
+                    infoContainer.appendChild(overviewElement);
+                    infoContainer.appendChild(factsTitleElement);
+                    infoContainer.appendChild(factsListElement);
+                }
+            });
+        });
+
+        if (!infoContainer && document.getElementById('info-container')) {
+            const infoContainerFallback = document.getElementById('info-container');
+            infoContainerFallback.innerHTML = '<p>Click on a city marker to see information here.</p>';
+        }
+    </script>
+</body>
+</html>
