@@ -18,27 +18,114 @@
         }
 
         #map-container {
-            height: 1200px; /* Modified height */
-            width: 1200px;  /* Modified width */
+            height: 800px;  /* Modified height */
+            width: 1200px;
             margin-bottom: 20px;
         }
 
         #info-container {
-            width: 1200px;  /* Modified width */
+            width: 1200px;
             padding: 15px;
             border: 1px solid #ccc;
             min-height: 100px;
             color: #777;
-            box-sizing: border-box; /* Added for better width calculation */
+            box-sizing: border-box;
+            display: none; /* Added to hide */
         }
 
-        .city-info h2 {
+        .city-info h2 { /* This rule might become obsolete if .city-info is no longer used */
             margin-top: 0;
         }
 
-        .city-info ul {
+        .city-info ul { /* This rule might become obsolete if .city-info is no longer used */
             list-style-type: disc;
             padding-left: 20px;
+        }
+
+        /* Overlay Container */
+        #city-overlay {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place even when scrolling */
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%); /* Center the overlay */
+            width: 450px; /* Or a percentage, e.g., 60% */
+            max-width: 90%; /* Ensure it's not too wide on small map views */
+            max-height: 90vh; /* Max height relative to viewport */
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 10000; /* Ensure it's on top of the map */
+            overflow-y: auto; /* Allow scrolling if content exceeds max-height */
+            box-sizing: border-box;
+        }
+
+        /* Close Button for Overlay */
+        #close-overlay {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Image Carousel Container */
+        #overlay-image-carousel {
+            width: 100%;
+            height: 220px; /* Fixed height for the carousel */
+            position: relative; /* For positioning nav buttons */
+            overflow: hidden; /* Hide parts of images if they don't fit perfectly */
+            margin-bottom: 15px;
+            background-color: #f0f0f0; /* Placeholder background */
+        }
+
+        #overlay-image-carousel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover the area, might crop */
+            display: block; /* Remove extra space below image */
+        }
+
+        /* Carousel Navigation Buttons */
+        #overlay-image-carousel .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 1; /* Ensure buttons are above the image */
+        }
+
+        #overlay-image-carousel #prev-image {
+            left: 10px;
+        }
+
+        #overlay-image-carousel #next-image {
+            right: 10px;
+        }
+
+        /* Styles for text content within overlay */
+        #overlay-city-name {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        #overlay-city-overview {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        #overlay-city-facts {
+            font-size: 0.9em;
+            padding-left: 20px; /* Indent list items */
         }
     </style>
 </head>
@@ -48,6 +135,23 @@
 
     <!-- Leaflet JavaScript CDN Link (keep this) -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- City Overlay Modal HTML -->
+    <div id="city-overlay" style="display: none;">
+        <button id="close-overlay">X</button>
+        <h2 id="overlay-city-name"></h2>
+        
+        <div id="overlay-image-carousel">
+            <img id="carousel-image" src="" alt="City Image" />
+            <button id="prev-image" class="carousel-btn">&lt;</button>
+            <button id="next-image" class="carousel-btn">&gt;</button>
+        </div>
+        
+        <p id="overlay-city-overview"></p>
+        <h3>Travel Facts:</h3>
+        <ul id="overlay-city-facts"></ul>
+    </div>
+
     <!-- Embedded JavaScript will go here -->
     <script>
         // Array to store city data
@@ -60,6 +164,10 @@
               "Home to the Hassan II Mosque, one of the largest mosques in the world, built partly on the sea.",
               "Features a vibrant art-deco architectural style in its city center.",
               "The Old Medina offers a traditional shopping experience with a variety of crafts and goods."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Casablanca+1",
+                "https://via.placeholder.com/400x200.png?text=Casablanca+2"
             ]
           },
           {
@@ -70,6 +178,10 @@
               "Features the Kasbah of the Udayas, a picturesque 12th-century fortress.",
               "Home to the Mausoleum of Mohammed V, a masterpiece of modern Alaouite dynasty architecture.",
               "The Chellah, a medieval fortified Muslim necropolis, stands on the site of an ancient Roman town."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Rabat+1",
+                "https://via.placeholder.com/400x200.png?text=Rabat+2"
             ]
           },
           {
@@ -80,6 +192,10 @@
               "Known for its buildings and alleyways painted in various shades of blue.",
               "A popular destination for its handicrafts, especially woven goods and goat cheese.",
               "Offers beautiful hiking opportunities in the surrounding Rif Mountains."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Chefchaouen+1",
+                "https://via.placeholder.com/400x200.png?text=Chefchaouen+2"
             ]
           },
           {
@@ -90,6 +206,10 @@
               "Fes el-Bali is one of the world's largest car-free urban areas.",
               "Famous for its traditional tanneries, where leather has been processed for centuries.",
               "Home to the University of Al Quaraouiyine, founded in 859 AD, considered the oldest existing, continually operating educational institution in the world."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Fes+1",
+                "https://via.placeholder.com/400x200.png?text=Fes+2"
             ]
           },
           {
@@ -100,6 +220,10 @@
               "Features the impressive Bab Mansour gate, known for its intricate tilework.",
               "Was the capital of Morocco under Sultan Moulay Ismail in the 17th century.",
               "Nearby are the Roman ruins of Volubilis, a UNESCO World Heritage site."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Meknes+1",
+                "https://via.placeholder.com/400x200.png?text=Meknes+2"
             ]
           },
           {
@@ -110,6 +234,10 @@
               "A major Roman outpost, its ruins include a triumphal arch, basilica, and well-preserved mosaics.",
               "Was the ancient capital of the kingdom of Mauretania.",
               "Provides a fascinating insight into the Roman presence in North Africa."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Volubilis+1",
+                "https://via.placeholder.com/400x200.png?text=Volubilis+2"
             ]
           },
           {
@@ -120,6 +248,10 @@
               "Known for its date festival, typically held in October.",
               "A major center for fossil excavation and preparation; many unique specimens are found here.",
               "Offers easy access to the spectacular Erg Chebbi sand dunes near Merzouga."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Erfoud+1",
+                "https://via.placeholder.com/400x200.png?text=Erfoud+2"
             ]
           },
           {
@@ -130,6 +262,10 @@
               "Famous for the Erg Chebbi dunes, which can reach over 150 meters in height.",
               "Offers unforgettable experiences like camel trekking and overnight stays in desert camps.",
               "A great place for stargazing due to clear desert skies and minimal light pollution."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Merzouga+1",
+                "https://via.placeholder.com/400x200.png?text=Merzouga+2"
             ]
           },
           {
@@ -140,6 +276,10 @@
               "Home to Ait Benhaddou, a UNESCO World Heritage ksar (fortified village) and famous film location.",
               "Features Atlas Film Studios, one of the largest movie studios in the world.",
               "Serves as a gateway to the Draa Valley and various desert landscapes."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Ouarzazate+1",
+                "https://via.placeholder.com/400x200.png?text=Ouarzazate+2"
             ]
           },
           {
@@ -150,6 +290,10 @@
               "Djemaa el-Fna square comes alive at night with storytellers, musicians, and food stalls.",
               "Known for its extensive souks (markets) offering everything from spices to lanterns.",
               "Features beautiful historical sites like the Koutoubia Mosque, Bahia Palace, and Saadian Tombs."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Marrakech+1",
+                "https://via.placeholder.com/400x200.png?text=Marrakech+2"
             ]
           },
           {
@@ -160,9 +304,16 @@
               "Its medina is fortified with impressive ramparts and cannons overlooking the Atlantic.",
               "A major destination for windsurfing and kitesurfing due to consistent strong winds.",
               "Famous for its fresh seafood, particularly grilled sardines, and argan oil products."
+            ],
+            images: [
+                "https://via.placeholder.com/400x200.png?text=Essaouira+1",
+                "https://via.placeholder.com/400x200.png?text=Essaouira+2"
             ]
           }
         ];
+
+        let currentCityImages = [];
+        let currentImageIndex = 0;
 
         const map = L.map('map-container').setView([31.7917, -7.0926], 6);
 
@@ -173,57 +324,85 @@
 
         // Set map options for maxBounds and minZoom
         map.setMaxBounds(bounds);
-        map.options.minZoom = 5; // Or 6 if 5 is too zoomed out with bounds
-
-        // It might be good to also call map.fitBounds(bounds) here to ensure the initial view respects the bounds,
-        // though setView and setMaxBounds should generally handle this. Let's add it for robustness.
+        map.options.minZoom = 5; 
         map.fitBounds(bounds); 
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        const infoContainer = document.getElementById('info-container');
+        // const infoContainer = document.getElementById('info-container'); // Old logic - commented out
+        // if (infoContainer) { // Old logic - commented out
+        //     infoContainer.innerHTML = '<p>Click on a city marker to see information here.</p>'; // Old logic - commented out
+        // }
 
-        if (infoContainer) {
-            infoContainer.innerHTML = '<p>Click on a city marker to see information here.</p>';
-        }
+        // DOM elements for the overlay
+        const cityOverlay = document.getElementById('city-overlay');
+        const closeOverlayButton = document.getElementById('close-overlay');
+        const overlayCityName = document.getElementById('overlay-city-name');
+        const overlayImageCarousel = document.getElementById('overlay-image-carousel');
+        const carouselImage = document.getElementById('carousel-image');
+        const prevImageButton = document.getElementById('prev-image');
+        const nextImageButton = document.getElementById('next-image');
+        const overlayCityOverview = document.getElementById('overlay-city-overview');
+        const overlayCityFacts = document.getElementById('overlay-city-facts');
 
         citiesData.forEach(city => {
             const marker = L.marker(city.coordinates).addTo(map);
             marker.on('click', () => {
-                if (infoContainer) {
-                    infoContainer.innerHTML = '';
-                    infoContainer.classList.add('city-info');
-                    
-                    const nameElement = document.createElement('h2');
-                    nameElement.textContent = city.name;
+                overlayCityName.textContent = city.name;
+                overlayCityOverview.textContent = city.overview;
 
-                    const overviewElement = document.createElement('p');
-                    overviewElement.textContent = city.overview;
+                overlayCityFacts.innerHTML = ''; // Clear previous facts
+                city.facts.forEach(fact => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = fact;
+                    overlayCityFacts.appendChild(listItem);
+                });
 
-                    const factsTitleElement = document.createElement('h3');
-                    factsTitleElement.textContent = 'Travel Facts:';
-
-                    const factsListElement = document.createElement('ul');
-                    city.facts.forEach(fact => {
-                        const listItem = document.createElement('li');
-                        listItem.textContent = fact;
-                        factsListElement.appendChild(listItem);
-                    });
-
-                    infoContainer.appendChild(nameElement);
-                    infoContainer.appendChild(overviewElement);
-                    infoContainer.appendChild(factsTitleElement);
-                    infoContainer.appendChild(factsListElement);
+                currentCityImages = city.images || []; // Use city images or empty array if none
+                currentImageIndex = 0;
+                if (currentCityImages.length > 0) {
+                    carouselImage.src = currentCityImages[currentImageIndex];
+                    carouselImage.alt = city.name + " - Image " + (currentImageIndex + 1);
+                    overlayImageCarousel.style.display = 'block'; // Show carousel if images exist
+                } else {
+                    carouselImage.src = ""; // Clear src if no images
+                    carouselImage.alt = "No image available";
+                    overlayImageCarousel.style.display = 'none'; // Hide carousel if no images
                 }
+                
+                cityOverlay.style.display = 'block';
             });
         });
+        
+        // Event listener for closing the overlay
+        closeOverlayButton.addEventListener('click', () => {
+            cityOverlay.style.display = 'none';
+        });
 
-        if (!infoContainer && document.getElementById('info-container')) {
-            const infoContainerFallback = document.getElementById('info-container');
-            infoContainerFallback.innerHTML = '<p>Click on a city marker to see information here.</p>';
-        }
+        // Event listeners for image carousel navigation
+        prevImageButton.addEventListener('click', () => {
+            if (currentCityImages.length > 0) {
+                currentImageIndex = (currentImageIndex - 1 + currentCityImages.length) % currentCityImages.length;
+                carouselImage.src = currentCityImages[currentImageIndex];
+                carouselImage.alt = overlayCityName.textContent + " - Image " + (currentImageIndex + 1);
+            }
+        });
+
+        nextImageButton.addEventListener('click', () => {
+            if (currentCityImages.length > 0) {
+                currentImageIndex = (currentImageIndex + 1) % currentCityImages.length;
+                carouselImage.src = currentCityImages[currentImageIndex];
+                carouselImage.alt = overlayCityName.textContent + " - Image " + (currentImageIndex + 1);
+            }
+        });
+
+        // Fallback for infoContainer if it was somehow still relevant (it's not with overlay)
+        // const infoContainerFallback = document.getElementById('info-container'); // Old logic - commented out
+        // if (!infoContainer && infoContainerFallback) { // Old logic - commented out
+        //     infoContainerFallback.innerHTML = '<p>Click on a city marker to see information here.</p>'; // Old logic - commented out
+        // }
     </script>
 </body>
 </html>
